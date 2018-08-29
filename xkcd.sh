@@ -1,5 +1,7 @@
 #!/bin/bash
 
+scriptDirectory="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null && pwd)"
+
 if [ $# -gt 1 ]; then
 	echo "Too many input arguments."
 	exit 1
@@ -8,36 +10,36 @@ elif [[ $# -eq 1 && "$1" != "-q" ]]; then
 	exit 2
 fi
 
-if [ -f xkcd.html ]; then
-	rm xkcd.html
+if [ -f $scriptDirectory/xkcd.html ]; then
+	rm $scriptDirectory/xkcd.html
 fi
 
-if [ ! -f .xkcd_history ]; then
-	touch .xkcd_history
+if [ ! -f $scriptDirectory/.xkcd_history ]; then
+	touch $scriptDirectory/.xkcd_history
 fi
 
-histLength=$(wc -l .xkcd_history | cut -d " " -f 1)
+histLength=$(wc -l $scriptDirectory/.xkcd_history | cut -d " " -f 1)
 
 if [ $histLength -gt 10 ]; then
-	lastEntry=$(tail -n 1 .xkcd_history) 
-	echo $lastEntry > .xkcd_history
+	lastEntry=$(tail -n 1 $scriptDirectory/.xkcd_history) 
+	echo $lastEntry > $scriptDirectory/.xkcd_history
 fi
 
 if [ $# -eq 0 ]; then
 	echo "Refreshing HTML file..."
 fi
 
-wget --quiet https://xkcd.com/ -O xkcd.html
+wget --quiet https://xkcd.com/ -O $scriptDirectory/xkcd.html
 
-comicNum=$(grep 'Permanent link to this comic:' < xkcd.html | cut -d "/" -f 4)
-comicLink=$(grep 'Image URL (for hotlinking/embedding):' < xkcd.html | cut -d ":" -f 2,3)
+comicNum=$(grep 'Permanent link to this comic:' < $scriptDirectory/xkcd.html | cut -d "/" -f 4)
+comicLink=$(grep 'Image URL (for hotlinking/embedding):' < $scriptDirectory/xkcd.html | cut -d ":" -f 2,3)
 imageFormat=$(echo $comicLink | cut -d "." -f 4)
 
 if [ ! -d ~/Pictures/xkcd/ ]; then
 	mkdir -p ~/Pictures/xkcd/
 fi
 
-if [[ $histLength -gt 0 &&  $comicNum -eq $(tail -n 1 .xkcd_history) &&\
+if [[ $histLength -gt 0 &&  $comicNum -eq $(tail -n 1 $scriptDirectory/.xkcd_history) &&\
 	-f ~/Pictures/xkcd/${comicNum}.${imageFormat} ]]; then
 
 	if [ $# -eq 0 ]; then
@@ -49,13 +51,15 @@ else
 	if [ $# -eq 0 ]; then 
 		echo "Fetching comic..."
 		wget --quiet $comicLink -O ~/Pictures/xkcd/${comicNum}.${imageFormat}
-		echo $comicNum >> .xkcd_history
+		echo $comicNum >> $scriptDirectory/.xkcd_history
 		echo "Opening comic..."
 		display ~/Pictures/xkcd/${comicNum}.${imageFormat} &
 	else
 		wget --quiet $comicLink -O ~/Pictures/xkcd/${comicNum}.${imageFormat}
-		echo $comicNum >> .xkcd_history
+		echo $comicNum >> $scriptDirectory/.xkcd_history
 	fi
 fi
+
+rm $scriptDirectory/xkcd.html
 
 exit 0
